@@ -14,12 +14,16 @@ enum custom_keycodes {
 
 
 
-#define DUAL_FUNC_0 LT(6, KC_F14)
+// Tap/Hold-Taste fuer Winkelklammern: Tap = '<', Hold = '>'.
+// Der LT(...) dient nur dazu, dass QMK die Tap/Hold-Aufloesung macht
+// (record->tap.count). Layer 6 existiert nicht und wird nie aktiviert,
+// weil process_record_user unten mit `return false` abbricht.
+#define TH_LTGT LT(6, KC_F14)
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [0] = LAYOUT_moonlander(
-    MO(3),          KC_1,           KC_2,           KC_3,           KC_4,           KC_5,           LGUI(LSFT(KC_4)),                                LGUI(LSFT(KC_5)),KC_6,           KC_7,           KC_8,           KC_9,           KC_0,           LT(2, KC_Q),    
-    MO(4),          KC_J,           KC_D,           KC_U,           KC_A,           KC_X,           KC_DELETE,                                      KC_P,           KC_P,           KC_H,           KC_L,           KC_M,           KC_W,           DE_SS,          
+    MO(3),          KC_1,           KC_2,           KC_3,           KC_4,           KC_5,           LGUI(LSFT(KC_4)),                                LGUI(LSFT(KC_5)),KC_6,           KC_7,           KC_8,           KC_9,           KC_0,           LT(2, KC_BSPC),
+    MO(4),          KC_J,           KC_D,           KC_U,           KC_A,           KC_X,           KC_DELETE,                                      KC_BSPC,        KC_P,           KC_H,           KC_L,           KC_M,           KC_W,           DE_SS,          
     MO(2),          KC_C,           KC_T,           KC_I,           KC_E,           KC_O,           KC_ESCAPE,                                                                      TG(1),          KC_B,           KC_N,           KC_R,           KC_S,           KC_G,           KC_Q,           
     KC_TAB,         KC_F,           KC_V,           DE_UE,          DE_AE,          DE_OE,                                          DE_Y,           DE_Z,           KC_COMMA,       KC_DOT,         KC_UP,          KC_K,           
     KC_LEFT_SHIFT,  LGUI(KC_SPACE), KC_LEFT_CTRL,   KC_LEFT_ALT,    KC_LEFT_GUI,    KC_CAPS,                                                                                                        TG(4),          KC_BSPC,        KC_RIGHT_GUI,   KC_LEFT,        KC_DOWN,        KC_RIGHT,       
@@ -35,7 +39,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   ),
   [2] = LAYOUT_moonlander(
     KC_TRANSPARENT, KC_F1,          KC_F2,          KC_F3,          KC_F4,          KC_F5,          KC_TRANSPARENT,                                 KC_TRANSPARENT, KC_F6,          KC_F7,          KC_F8,          KC_F9,          KC_F10,         KC_TRANSPARENT, 
-    LALT(KC_L),     LALT(KC_DOT),   DE_UNDS,        LALT(KC_5),     LALT(KC_6),     DUAL_FUNC_0,    KC_TRANSPARENT,                                 KC_TRANSPARENT, DE_EXLM,        DE_CIRC,        LSFT(DE_CIRC),  DE_EQL,         DE_AMPR,        DE_AT,          
+    LALT(KC_L),     LALT(KC_DOT),   DE_UNDS,        LALT(KC_5),     LALT(KC_6),     TH_LTGT,    KC_TRANSPARENT,                                 KC_TRANSPARENT, DE_EXLM,        DE_CIRC,        LSFT(DE_CIRC),  DE_EQL,         DE_AMPR,        DE_AT,          
     KC_TRANSPARENT, LALT(LSFT(KC_7)),DE_SLSH,        LALT(KC_8),     LALT(KC_9),     DE_ASTR,        KC_TRANSPARENT,                                                                 KC_TRANSPARENT, DE_QST,         DE_LPRN,        DE_RPRN,        DE_MINS,        DE_COLN,        KC_TRANSPARENT, 
     KC_TRANSPARENT, DE_HASH,        DE_DLR,         LALT(KC_7),     LALT(KC_N),     DE_GRV,                                         DE_PLUS,        DE_PERC,        DE_DQOT,        DE_QUOT,        DE_SCLN,        DE_EURO,        
     KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,                                                                                                 KC_TRANSPARENT, KC_TRANSPARENT, KC_F12,         KC_F13,         KC_F14,         KC_F15,         
@@ -173,7 +177,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case MAC_LOCK:
       HCS(0x19E);
 
-    case DUAL_FUNC_0:
+    case TH_LTGT:
       if (record->tap.count > 0) {
         if (record->event.pressed) {
           register_code16(DE_LESS);
