@@ -1,4 +1,67 @@
-# Building your layout from source
+# ZSA Moonlander – Layout "bone-r"
+
+Build- & Flash-Pipeline für mein Oryx-Layout (`pzg9d`). Firmware wird reproduzierbar
+im Docker-Container gegen ZSA's QMK-Fork gebaut und mit `wally-cli` geflasht.
+
+## Schnellstart
+
+```sh
+make setup              # einmalig: QMK-Fork klonen (~1.5 GB), wally-cli + libusb bereitstellen
+make build              # Firmware kompilieren -> ./zsa_moonlander_reva_bone-r.bin
+make flash              # aufs Board flashen (Reset-Knopf drücken, wenn wally-cli wartet)
+```
+
+`make help` zeigt alle Targets.
+
+## Hardware-Revision
+
+Der Moonlander gibt es als **revA** (Mark I, ausgeliefert bis ~Mitte Dez 2025) und
+**revB** (neuer). Sie haben unterschiedliche USB-PID und Bootloader – die Firmware muss
+zur Hardware passen. Default ist `reva`; für revB:
+
+```sh
+make build REV=revb
+make flash REV=revb
+```
+
+Im Bootloader-Modus (Reset) meldet sich revA als „STM32 Bootloader" / „STM Device in DFU
+Mode", revB als „Moonlander Bootloader".
+
+Die Revision lässt sich auch automatisch über die USB-Deskriptoren ermitteln:
+
+```sh
+make detect             # einmalig prüfen, welches Board angeschlossen ist
+make detect-wait        # bis zu 60s warten – Board in den Bootloader bringen (Reset)
+make detect-wait WAIT=120
+make usb                # alle USB-Geräte auflisten (Diagnose, wenn nichts erkannt wird)
+make flash-auto         # Revision erkennen (mit Warten), bauen und flashen in einem Schritt
+```
+
+`make flash-auto` ist der bequemste Weg: Befehl starten, Reset drücken, fertig.
+
+Die Erkennung liest den Live-USB-Zustand via `ioreg` (nicht `system_profiler`, das auf
+macOS oft veraltete/leere Daten liefert). Wird nichts erkannt, zeigt `make detect` automatisch
+die USB-Geräteliste, damit sich das Board (auch im Bootloader) identifizieren lässt.
+
+## Voraussetzungen
+
+- Docker (für den QMK-Build – keine lokale Toolchain nötig)
+- macOS mit Homebrew (für `libusb`, das `wally-cli` zur Laufzeit braucht)
+
+## Was wo liegt
+
+- `zsa_moonlander_bone-r_source/` – die aus Oryx exportierte Layout-Quelle (eingecheckt)
+- `Makefile` – die Pipeline
+- `qmk_firmware/` – geklonter ZSA-Fork (gitignored, via `make setup`)
+- `bin/wally-cli` – Flasher (gitignored, via `make setup`)
+
+Der Build mountet den Quell-Ordner direkt als Keymap `bone-r` in den Container, klont/kopiert
+also nichts in den Fork hinein – Layout-Änderungen in `zsa_moonlander_bone-r_source/` werden
+beim nächsten `make build` automatisch übernommen.
+
+---
+
+# Building your layout from source (Original ZSA-Anleitung)
 
 Congratulations on taking the next step, and making use of your keyboard's open-source nature! There's so much you can do with QMK. 
 

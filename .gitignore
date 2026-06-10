@@ -2,3 +2,7 @@
 build.log
 *.bin
 *.bin.md5
+
+# Build pipeline (lokal, nicht eingecheckt)
+qmk_firmware/
+bin/
