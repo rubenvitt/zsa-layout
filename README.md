@@ -13,6 +13,10 @@ make flash              # aufs Board flashen (Reset-Knopf drücken, wenn zapp wa
 
 `make help` zeigt alle Targets.
 
+`make viewer` öffnet eine 3D-Ansicht des Layouts (three.js, `viewer/`). Sie liest
+`keymap.c` live ein und aktualisiert sich alle 2 s – Tasten anklicken zeigt ihre Funktion
+auf allen Layern.
+
 ## Hardware-Revision
 
 Der Moonlander gibt es als **revA** (Mark I, ausgeliefert bis ~Mitte Dez 2025) und

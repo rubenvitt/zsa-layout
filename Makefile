@@ -40,7 +40,7 @@ DOCKER_RUN = docker run --rm --user $(shell id -u):$(shell id -g) \
 .DEFAULT_GOAL := help
 
 # ---- Targets -------------------------------------------------------------
-.PHONY: help setup build build-all detect detect-wait usb flash flash-auto clean distclean
+.PHONY: help setup build build-all detect detect-wait usb flash flash-auto viewer clean distclean
 
 help:
 	@echo "Moonlander Build-Pipeline (Layout: $(KEYMAP), Revision: $(REV))"
@@ -53,6 +53,7 @@ help:
 	@echo "  make usb        alle angeschlossenen USB-Geraete auflisten (Diagnose)"
 	@echo "  make flash      Firmware flashen (Board per Reset in den Bootloader)"
 	@echo "  make flash-auto Revision automatisch erkennen, passende Firmware flashen"
+	@echo "  make viewer     3D-Ansicht des Layouts im Browser (liest keymap.c live)"
 	@echo "  make clean      gebaute Artefakte entfernen"
 	@echo "  make distclean  zusaetzlich QMK-Fork loeschen"
 	@echo ""
@@ -103,6 +104,13 @@ flash: zapp
 	@echo ">> Flashe ./$(FW_BIN) ($(REV))."
 	@echo ">> Druecke jetzt den Reset-Knopf am Moonlander (kleines Loch oben links)."
 	$(ZAPP) flash ./$(FW_BIN)
+
+# 3D-Ansicht: Seite liest keymap.c live per fetch, braucht daher einen lokalen Server.
+VIEWER_PORT ?= 8000
+viewer:
+	@echo ">> 3D-Ansicht: http://localhost:$(VIEWER_PORT)/viewer/  (Strg+C beendet)"
+	@(sleep 1 && open http://localhost:$(VIEWER_PORT)/viewer/) &
+	python3 -m http.server $(VIEWER_PORT) --bind 127.0.0.1
 
 clean:
 	rm -f ./zsa_moonlander_*_$(KEYMAP).bin ./zsa_moonlander_*_$(KEYMAP).bin.md5
