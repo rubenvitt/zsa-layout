@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bone-r · Layer-Aufräum-Konzept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0b0e; --surface:#13151b; --surface2:#1b1e26; --line:#2a2e3a;
+  --ink:#e9e6da; --dim:#7c8190; --faint:#494f5e;
+  --amber:#ffb454; --amber-d:#c8842f;
+  --keep:#56d364; --remove:#ff5d52; --freed:#ffd23f; --review:#5ec8ff;
+  --blocked:#23262f;
+  --u:54px; /* key unit */
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:14px; line-height:1.6;
+  background-image:
+    linear-gradient(rgba(255,180,84,.022) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,180,84,.022) 1px,transparent 1px);
+  background-size:28px 28px;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:48px 28px 90px}
+
+/* header */
+header{margin-bottom:42px;position:relative}
+.kicker{font-size:11px;letter-spacing:.42em;text-transform:uppercase;color:var(--amber-d);margin-bottom:14px}
+h1{font-family:"Chakra Petch",sans-serif;font-weight:700;font-size:clamp(34px,6vw,62px);
+   line-height:.96;letter-spacing:-.01em;color:var(--ink)}
+h1 .lo{color:var(--amber)}
+.lede{margin-top:18px;max-width:62ch;color:var(--dim);font-size:15px}
+.lede b{color:var(--ink);font-weight:600}
+
+/* stat strip */
+.stats{display:flex;flex-wrap:wrap;gap:1px;margin-top:30px;background:var(--line);
+  border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.stat{flex:1 1 150px;background:var(--surface);padding:16px 18px}
+.stat .n{font-family:"Chakra Petch",sans-serif;font-size:30px;font-weight:600;line-height:1}
+.stat .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.14em;margin-top:8px}
+.stat.r .n{color:var(--remove)} .stat.f .n{color:var(--freed)}
+.stat.k .n{color:var(--keep)} .stat.v .n{color:var(--review)}
+
+/* layer tabs */
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:40px 0 8px}
+.tab{
+  appearance:none;cursor:pointer;border:1px solid var(--line);background:var(--surface);
+  color:var(--dim);font-family:"IBM Plex Mono",monospace;font-size:12.5px;font-weight:500;
+  padding:9px 15px 9px 13px;border-radius:8px;display:flex;align-items:center;gap:9px;
+  transition:.16s ease;letter-spacing:.02em}
+.tab:hover{border-color:var(--faint);color:var(--ink);transform:translateY(-1px)}
+.tab .dot{width:9px;height:9px;border-radius:50%;background:var(--lc,var(--amber));flex:none;
+  box-shadow:0 0 0 0 var(--lc,var(--amber));transition:.16s}
+.tab .ln{font-family:"Chakra Petch",sans-serif;font-weight:700;color:var(--ink)}
+.tab.active{background:var(--surface2);border-color:var(--lc,var(--amber));color:var(--ink)}
+.tab.active .dot{box-shadow:0 0 12px 1px var(--lc,var(--amber))}
+.tab .verdict{font-size:10px;padding:1px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.08em}
+.tab .verdict.rm{background:rgba(255,93,82,.16);color:var(--remove)}
+.tab .verdict.rv{background:rgba(94,200,255,.14);color:var(--review)}
+.tab .verdict.kp{background:rgba(86,211,100,.13);color:var(--keep)}
+
+/* board */
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:30px 24px;margin-top:18px;position:relative;overflow-x:auto}
+.board-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;
+  flex-wrap:wrap;gap:8px}
+.board-title{font-family:"Chakra Petch",sans-serif;font-size:20px;font-weight:600}
+.board-title .lp{color:var(--lc,var(--amber))}
+.board-sub{color:var(--dim);font-size:13px}
+.board{position:relative;margin:22px auto 6px}
+
+.key{position:absolute;border-radius:7px;background:var(--surface2);
+  border:1px solid var(--line);border-top-color:#323847;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  padding:2px;overflow:hidden;
+  box-shadow:0 2px 0 rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.03);
+  transition:.13s ease}
+.key .lab{font-size:12px;font-weight:500;color:var(--ink);line-height:1.08;word-break:break-word}
+.key .hold{position:absolute;top:3px;left:4px;font-size:8.5px;font-weight:600;
+  color:var(--amber);letter-spacing:.04em;opacity:.9}
+.key.t .lab{color:var(--faint);font-size:14px}     /* transparent */
+.key.b{background:var(--blocked);border-color:#1c1f27}
+.key.b .lab{color:#363b47;font-size:11px}
+.key.keep{}
+.key.remove{background:linear-gradient(160deg,rgba(255,93,82,.22),rgba(255,93,82,.07));
+  border-color:rgba(255,93,82,.55)}
+.key.remove .lab{color:#ffd2ce}
+.key.freed{background:linear-gradient(160deg,rgba(255,210,63,.2),rgba(255,210,63,.05));
+  border-color:rgba(255,210,63,.6)}
+.key.freed .lab{color:#ffe9a6}
+.key.review{background:linear-gradient(160deg,rgba(94,200,255,.16),rgba(94,200,255,.04));
+  border-color:rgba(94,200,255,.5)}
+.key.review .lab{color:#cfeeff}
+.key:hover{transform:translateY(-2px);border-color:var(--amber);z-index:5;
+  box-shadow:0 6px 14px rgba(0,0,0,.5)}
+
+/* legend */
+.legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:18px;padding-top:18px;
+  border-top:1px solid var(--line);font-size:12px;color:var(--dim)}
+.legend span{display:flex;align-items:center;gap:8px}
+.sw{width:16px;height:16px;border-radius:4px;border:1px solid var(--line);flex:none}
+.sw.remove{background:rgba(255,93,82,.3);border-color:var(--remove)}
+.sw.freed{background:rgba(255,210,63,.3);border-color:var(--freed)}
+.sw.review{background:rgba(94,200,255,.3);border-color:var(--review)}
+.sw.keep{background:var(--surface2)}
+.sw.b{background:var(--blocked)}
+.sw.t{background:var(--surface2)} .sw.t::after{content:"▽";color:var(--faint);font-size:10px;
+  display:flex;align-items:center;justify-content:center;height:100%}
+
+/* recommendations */
+.recs{margin-top:54px}
+.recs h2{font-family:"Chakra Petch",sans-serif;font-size:13px;letter-spacing:.36em;
+  text-transform:uppercase;color:var(--amber-d);font-weight:600;margin-bottom:22px}
+.rec{display:grid;grid-template-columns:46px 1fr;gap:18px;padding:22px 0;
+  border-top:1px solid var(--line)}
+.rec:last-child{border-bottom:1px solid var(--line)}
+.rec .idx{font-family:"Chakra Petch",sans-serif;font-size:26px;font-weight:700;color:var(--faint);line-height:1}
+.rec h3{font-family:"Chakra Petch",sans-serif;font-size:18px;font-weight:600;margin-bottom:6px;
+  display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+.tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:5px;text-transform:uppercase;
+  letter-spacing:.07em}
+.tag.rm{background:rgba(255,93,82,.16);color:var(--remove)}
+.tag.rv{background:rgba(94,200,255,.14);color:var(--review)}
+.tag.opt{background:rgba(255,180,84,.14);color:var(--amber)}
+.rec p{color:var(--dim);font-size:13.5px;max-width:74ch}
+.rec p b{color:var(--ink);font-weight:600}
+.rec code{background:var(--surface2);border:1px solid var(--line);border-radius:4px;
+  padding:1px 6px;color:var(--amber);font-size:12.5px}
+.opts{margin-top:14px;display:grid;gap:10px}
+.optbox{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:14px 16px}
+.optbox .ot{font-weight:600;color:var(--ink);margin-bottom:3px;font-size:13.5px}
+.optbox.fav{border-color:var(--amber-d);background:linear-gradient(160deg,rgba(255,180,84,.06),transparent)}
+.optbox .badge{font-size:10px;color:var(--amber);text-transform:uppercase;letter-spacing:.1em;margin-left:8px}
+
+footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--line);
+  color:var(--faint);font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.note{color:var(--dim)}
+@media(max-width:680px){:root{--u:42px}.key .lab{font-size:10px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="kicker">ZSA Moonlander · Keymap „bone-r"</div>
+  <h1>Layer-<span class="lo">Aufräum</span>konzept</h1>
+  <p class="lede">Sechs Layer, <b>72 Tasten</b> pro Layer. Klick dich durch die Ebenen — markiert
+  ist, was <b>raus kann</b>, was dadurch <b>frei wird</b> und was du noch <b>entscheiden</b>
+  solltest. Nichts ist verändert; das hier ist nur der Plan zum Anschauen.</p>
+  <div class="stats" id="stats"></div>
+</header>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="stage">
+  <div class="board-head">
+    <div class="board-title">Layer <span class="lp" id="bt-n">0</span> · <span id="bt-name">Base</span></div>
+    <div class="board-sub" id="bt-sub"></div>
+  </div>
+  <div class="board" id="board"></div>
+  <div class="legend">
+    <span><i class="sw remove"></i> Vorschlag: entfernen</span>
+    <span><i class="sw freed"></i> wird frei</span>
+    <span><i class="sw review"></i> entscheiden</span>
+    <span><i class="sw keep"></i> behalten</span>
+    <span><i class="sw t"></i> transparent (fällt durch)</span>
+    <span><i class="sw b"></i> blockiert (KC_NO)</span>
+  </div>
+</div>
+
+<section class="recs">
+  <h2>Empfehlungen</h2>
+
+  <div class="rec">
+    <div class="idx">01</div>
+    <div>
+      <h3>QWERTZ-Layer komplett raus <span class="tag rm">entfernen</span></h3>
+      <p><b>Layer 1</b> ist ein vollständiges QWERTZ — ein Fallback, den du bei Bone als
+      Hauptlayout praktisch nie brauchst. Aktiviert wird er über <code>TG(1)</code> auf der
+      rechten Grundreihe (Index 35). Entfernt man den Layer, wird diese Taste frei und das
+      versehentliche Umschalten ins „falsche" Layout kann nicht mehr passieren.</p>
+    </div>
+  </div>
+
+  <div class="rec">
+    <div class="idx">02</div>
+    <div>
+      <h3>Wie mit den freien Plätzen umgehen? <span class="tag opt">2 Optionen</span></h3>
+      <p>Wenn Layer 1 wegfällt, stellt sich die Frage, ob die höheren Layer nachrücken:</p>
+      <div class="opts">
+        <div class="optbox fav">
+          <div class="ot">A · Renummerieren <span class="badge">sauberer</span></div>
+          <p>Layer 2→1, 3→2, 4→3, 5→4. Ergibt eine lückenlose Struktur. Erfordert das Anpassen
+          aller Referenzen (<code>MO(2)</code>, <code>LT(2,…)</code>, <code>TG(4)</code>,
+          <code>MO(5)</code>) sowie der RGB-Cases und des <code>ledmap</code>-Arrays.
+          Mehr Arbeit, aber das eigentliche Aufräumen — Build deckt Fehler sofort auf.</p>
+        </div>
+        <div class="optbox">
+          <div class="ot">B · Slot leer lassen</div>
+          <p>Layer 1 nur leeren und <code>TG(1)</code> entfernen, Nummern bleiben. Minimaler
+          Eingriff, aber es bleibt ein „Loch" in der Layer-Liste.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rec">
+    <div class="idx">03</div>
+    <div>
+      <h3>Layer 5 (IDE-Shortcuts) — nutzt du das noch? <span class="tag rv">entscheiden</span></h3>
+      <p><b>Layer 5</b> besteht fast nur aus <code>Ctrl/Alt/Cmd</code>-Kombinationen, die nach
+      IDE-Shortcuts aussehen (Debug, Refactor, Fenster). Erreichbar über <code>MO(5)</code> am
+      Daumen. Wenn du die heute über die App selbst auslöst, ist der Layer ein Kandidat zum
+      Ausdünnen oder Streichen. Sag mir, was du davon wirklich benutzt.</p>
+    </div>
+  </div>
+
+  <div class="rec">
+    <div class="idx">04</div>
+    <div>
+      <h3>Layer 2–4 behalten <span class="tag" style="background:rgba(86,211,100,.13);color:var(--keep)">behalten</span></h3>
+      <p>Symbole/Zahlen (2), Navigation + Numpad (3) und Maus/Media/RGB (4) sind dicht belegt
+      und sinnvoll. Hier höchstens vereinzelte tote Slots glätten — kein struktureller Umbau.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>Generiert aus <span class="note">keymap.c</span> · Geometrie aus reva/keyboard.json</span>
+  <span class="note">Stand 2026-06-10 · noch nichts geflasht</span>
+</footer>
+</div>
+
+<script>
+const DATA = {"geo": [{"x": 0, "y": 0.375, "w": 1, "h": 1}, {"x": 1, "y": 0.375, "w": 1, "h": 1}, {"x": 2, "y": 0.125, "w": 1, "h": 1}, {"x": 3, "y": 0, "w": 1, "h": 1}, {"x": 4, "y": 0.125, "w": 1, "h": 1}, {"x": 5, "y": 0.25, "w": 1, "h": 1}, {"x": 6, "y": 0.25, "w": 1, "h": 1}, {"x": 10, "y": 0.25, "w": 1, "h": 1}, {"x": 11, "y": 0.25, "w": 1, "h": 1}, {"x": 12, "y": 0.125, "w": 1, "h": 1}, {"x": 13, "y": 0, "w": 1, "h": 1}, {"x": 14, "y": 0.125, "w": 1, "h": 1}, {"x": 15, "y": 0.375, "w": 1, "h": 1}, {"x": 16, "y": 0.375, "w": 1, "h": 1}, {"x": 0, "y": 1.375, "w": 1, "h": 1}, {"x": 1, "y": 1.375, "w": 1, "h": 1}, {"x": 2, "y": 1.125, "w": 1, "h": 1}, {"x": 3, "y": 1, "w": 1, "h": 1}, {"x": 4, "y": 1.125, "w": 1, "h": 1}, {"x": 5, "y": 1.25, "w": 1, "h": 1}, {"x": 6, "y": 1.25, "w": 1, "h": 1}, {"x": 10, "y": 1.25, "w": 1, "h": 1}, {"x": 11, "y": 1.25, "w": 1, "h": 1}, {"x": 12, "y": 1.125, "w": 1, "h": 1}, {"x": 13, "y": 1, "w": 1, "h": 1}, {"x": 14, "y": 1.125, "w": 1, "h": 1}, {"x": 15, "y": 1.375, "w": 1, "h": 1}, {"x": 16, "y": 1.375, "w": 1, "h": 1}, {"x": 0, "y": 2.375, "w": 1, "h": 1}, {"x": 1, "y": 2.375, "w": 1, "h": 1}, {"x": 2, "y": 2.125, "w": 1, "h": 1}, {"x": 3, "y": 2, "w": 1, "h": 1}, {"x": 4, "y": 2.125, "w": 1, "h": 1}, {"x": 5, "y": 2.25, "w": 1, "h": 1}, {"x": 6, "y": 2.25, "w": 1, "h": 1}, {"x": 10, "y": 2.25, "w": 1, "h": 1}, {"x": 11, "y": 2.25, "w": 1, "h": 1}, {"x": 12, "y": 2.125, "w": 1, "h": 1}, {"x": 13, "y": 2, "w": 1, "h": 1}, {"x": 14, "y": 2.125, "w": 1, "h": 1}, {"x": 15, "y": 2.375, "w": 1, "h": 1}, {"x": 16, "y": 2.375, "w": 1, "h": 1}, {"x": 0, "y": 3.375, "w": 1, "h": 1}, {"x": 1, "y": 3.375, "w": 1, "h": 1}, {"x": 2, "y": 3.125, "w": 1, "h": 1}, {"x": 3, "y": 3, "w": 1, "h": 1}, {"x": 4, "y": 3.125, "w": 1, "h": 1}, {"x": 5, "y": 3.25, "w": 1, "h": 1}, {"x": 11, "y": 3.25, "w": 1, "h": 1}, {"x": 12, "y": 3.125, "w": 1, "h": 1}, {"x": 13, "y": 3, "w": 1, "h": 1}, {"x": 14, "y": 3.125, "w": 1, "h": 1}, {"x": 15, "y": 3.375, "w": 1, "h": 1}, {"x": 16, "y": 3.375, "w": 1, "h": 1}, {"x": 0, "y": 4.375, "w": 1, "h": 1}, {"x": 1, "y": 4.375, "w": 1, "h": 1}, {"x": 2, "y": 4.125, "w": 1, "h": 1}, {"x": 3, "y": 4, "w": 1, "h": 1}, {"x": 4, "y": 4.125, "w": 1, "h": 1}, {"x": 5, "y": 4.5, "w": 2, "h": 1}, {"x": 10, "y": 4.5, "w": 2, "h": 1}, {"x": 12, "y": 4.125, "w": 1, "h": 1}, {"x": 13, "y": 4, "w": 1, "h": 1}, {"x": 14, "y": 4.125, "w": 1, "h": 1}, {"x": 15, "y": 4.375, "w": 1, "h": 1}, {"x": 16, "y": 4.375, "w": 1, "h": 1}, {"x": 5, "y": 5.5, "w": 1, "h": 1.5}, {"x": 6, "y": 5.5, "w": 1, "h": 1.5}, {"x": 7, "y": 5.5, "w": 1, "h": 1.5}, {"x": 9, "y": 5.5, "w": 1, "h": 1.5}, {"x": 10, "y": 5.5, "w": 1, "h": 1.5}, {"x": 11, "y": 5.5, "w": 1, "h": 1.5}], "layers": {"0": ["MO(3)", "KC_1", "KC_2", "KC_3", "KC_4", "KC_5", "LGUI(LSFT(KC_4))", "LGUI(LSFT(KC_5))", "KC_6", "KC_7", "KC_8", "KC_9", "KC_0", "LT(2, KC_BSPC)", "MO(4)", "KC_J", "KC_D", "KC_U", "KC_A", "KC_X", "KC_DELETE", "KC_BSPC", "KC_P", "KC_H", "KC_L", "KC_M", "KC_W", "DE_SS", "MO(2)", "KC_C", "KC_T", "KC_I", "KC_E", "KC_O", "KC_ESCAPE", "TG(1)", "KC_B", "KC_N", "KC_R", "KC_S", "KC_G", "KC_Q", "KC_TAB", "KC_F", "KC_V", "DE_UE", "DE_AE", "DE_OE", "DE_Y", "DE_Z", "KC_COMMA", "KC_DOT", "KC_UP", "KC_K", "KC_LEFT_SHIFT", "LGUI(KC_SPACE)", "KC_LEFT_CTRL", "KC_LEFT_ALT", "KC_LEFT_GUI", "KC_CAPS", "TG(4)", "KC_BSPC", "KC_RIGHT_GUI", "KC_LEFT", "KC_DOWN", "KC_RIGHT", "KC_ENTER", "MO(3)", "MO(5)", "MAC_SIRI", "KC_RIGHT_ALT", "KC_SPACE"], "1": ["KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_Q", "KC_W", "KC_E", "KC_R", "KC_T", "KC_F3", "KC_F3", "DE_Z", "KC_U", "KC_I", "KC_O", "KC_P", "DE_UE", "KC_TRANSPARENT", "KC_A", "KC_S", "KC_D", "KC_F", "KC_G", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_H", "KC_J", "KC_K", "KC_L", "DE_OE", "KC_TRANSPARENT", "KC_TRANSPARENT", "DE_Y", "KC_X", "KC_C", "KC_V", "KC_B", "KC_N", "KC_M", "KC_COMMA", "KC_DOT", "DE_MINS", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT"], "2": ["KC_TRANSPARENT", "KC_F1", "KC_F2", "KC_F3", "KC_F4", "KC_F5", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_F6", "KC_F7", "KC_F8", "KC_F9", "KC_F10", "KC_TRANSPARENT", "LALT(KC_L)", "LALT(KC_DOT)", "DE_UNDS", "LALT(KC_5)", "LALT(KC_6)", "TH_LTGT", "KC_TRANSPARENT", "KC_TRANSPARENT", "DE_EXLM", "DE_CIRC", "LSFT(DE_CIRC)", "DE_EQL", "DE_AMPR", "DE_AT", "KC_TRANSPARENT", "LALT(LSFT(KC_7))", "DE_SLSH", "LALT(KC_8)", "LALT(KC_9)", "DE_ASTR", "KC_TRANSPARENT", "KC_TRANSPARENT", "DE_QST", "DE_LPRN", "DE_RPRN", "DE_MINS", "DE_COLN", "KC_TRANSPARENT", "KC_TRANSPARENT", "DE_HASH", "DE_DLR", "LALT(KC_7)", "LALT(KC_N)", "DE_GRV", "DE_PLUS", "DE_PERC", "DE_DQOT", "DE_QUOT", "DE_SCLN", "DE_EURO", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_F12", "KC_F13", "KC_F14", "KC_F15", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT"], "3": ["KC_TRANSPARENT", "LGUI(LSFT(KC_SPACE))", "KC_NO", "KC_NO", "KC_NO", "KC_NO", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_NO", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_NO", "KC_TRANSPARENT", "MAC_LOCK", "KC_PAGE_UP", "KC_BSPC", "KC_UP", "KC_DELETE", "KC_PGDN", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_NO", "KC_7", "KC_8", "KC_9", "DE_PLUS", "DE_MINS", "KC_TRANSPARENT", "KC_HOME", "KC_LEFT", "KC_DOWN", "KC_RIGHT", "KC_END", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_NO", "KC_4", "KC_5", "KC_6", "DE_ASTR", "DE_SLSH", "KC_TRANSPARENT", "LGUI(LSFT(DE_Z))", "KC_MAC_CUT", "KC_MAC_COPY", "KC_MAC_PASTE", "LCTL(DE_Z)", "KC_0", "KC_1", "KC_2", "KC_3", "KC_NO", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_0", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_ESCAPE", "KC_TRANSPARENT"], "4": ["KC_TRANSPARENT", "KC_AUDIO_MUTE", "KC_AUDIO_VOL_DOWN", "KC_AUDIO_VOL_UP", "KC_BRIGHTNESS_DOWN", "KC_BRIGHTNESS_UP", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "RGB_VAI", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "QK_BOOT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_MS_BTN2", "KC_MS_UP", "KC_MS_BTN1", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "RGB_VAD", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "MU_NEXT", "KC_TRANSPARENT", "KC_MS_LEFT", "KC_MS_DOWN", "KC_MS_RIGHT", "KC_TRANSPARENT", "KC_TRANSPARENT", "AS_TOGG", "KC_TRANSPARENT", "KC_MS_BTN1", "KC_MS_BTN2", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_MS_WH_DOWN", "KC_MS_BTN3", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_MEDIA_PREV_TRACK", "KC_MEDIA_PLAY_PAUSE", "KC_MEDIA_NEXT_TRACK", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_MS_WH_LEFT", "KC_MS_WH_UP", "KC_MS_WH_RIGHT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_MEDIA_PLAY_PAUSE", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT"], "5": ["KC_TRANSPARENT", "KC_NO", "KC_NO", "KC_NO", "KC_NO", "KC_NO", "KC_NO", "KC_NO", "KC_NO", "KC_NO", "KC_NO", "KC_NO", "KC_NO", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_NO", "LALT(LCTL(LSFT(KC_L)))", "LCTL(KC_Q)", "LCTL(LSFT(KC_KP_SLASH))", "LCTL(KC_KP_SLASH)", "KC_NO", "KC_NO", "KC_NO", "LCTL(DE_Y)", "LALT(LSFT(KC_UP))", "LCTL(LSFT(KC_UP))", "LALT(LCTL(KC_T))", "KC_TRANSPARENT", "KC_TRANSPARENT", "LALT(LGUI(LSFT(KC_J)))", "LALT(LSFT(KC_L))", "LCTL(LSFT(KC_I))", "LSFT(KC_F9)", "LSFT(KC_F10)", "LCTL(LSFT(KC_F9))", "KC_NO", "KC_NO", "LCTL(KC_D)", "LALT(LSFT(KC_DOWN))", "LCTL(LSFT(KC_DOWN))", "LCTL(LSFT(KC_DELETE))", "LCTL(LSFT(KC_ENTER))", "KC_TRANSPARENT", "KC_NO", "LALT(LCTL(LSFT(KC_T)))", "LALT(LCTL(KC_M))", "LALT(LSFT(KC_V))", "LSFT(KC_F6)", "KC_NO", "LCTL(LSFT(KC_W))", "LCTL(KC_W)", "LALT(KC_J)", "LALT(LSFT(KC_J))", "LALT(LCTL(LSFT(KC_J)))", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT", "KC_TRANSPARENT"]}};
+
+const LAYERS = [
+  {n:0,name:"Base (Bone)",color:"#ffb454",verdict:null,sub:"Hauptlayout · bleibt"},
+  {n:1,name:"QWERTZ",color:"#ff5d52",verdict:"rm",sub:"vollständiges Alt-Layout · Vorschlag: entfernen"},
+  {n:2,name:"Symbole / Zahlen / F-Tasten",color:"#4fd6c8",verdict:"kp",sub:"dicht belegt · behalten"},
+  {n:3,name:"Navigation + Numpad",color:"#56d364",verdict:"kp",sub:"Pfeile, Numpad, Edit · behalten"},
+  {n:4,name:"Maus / Media / RGB / System",color:"#ff7ac6",verdict:"kp",sub:"Maus-Emulation & Steuerung · behalten"},
+  {n:5,name:"IDE-Shortcuts",color:"#ffa057",verdict:"rv",sub:"App-Kombis · entscheiden ob nötig"},
+];
+
+// ---- keycode -> label ----
+const MODS={LGUI:"⌘",LCMD:"⌘",RGUI:"⌘",LSFT:"⇧",RSFT:"⇧",LCTL:"⌃",RCTL:"⌃",LALT:"⌥",RALT:"⌥"};
+const BASE={
+ KC_NO:"",KC_TRANSPARENT:"▽",
+ KC_SPACE:"␣",KC_BSPC:"⌫",KC_DELETE:"⌦",KC_ENTER:"⏎",KC_TAB:"⇥",KC_ESCAPE:"esc",KC_CAPS:"⇪",
+ KC_LEFT:"←",KC_RIGHT:"→",KC_UP:"↑",KC_DOWN:"↓",
+ KC_HOME:"Home",KC_END:"End",KC_PAGE_UP:"PgUp",KC_PGDN:"PgDn",
+ KC_LEFT_SHIFT:"⇧",KC_LEFT_CTRL:"⌃",KC_LEFT_ALT:"⌥",KC_LEFT_GUI:"⌘",KC_RIGHT_GUI:"⌘",KC_RIGHT_ALT:"⌥",
+ KC_COMMA:",",KC_DOT:".",
+ DE_SS:"ß",DE_UE:"ü",DE_AE:"ä",DE_OE:"ö",DE_Y:"y",DE_Z:"z",DE_MINS:"-",DE_SLSH:"/",DE_ASTR:"*",
+ DE_PLUS:"+",DE_HASH:"#",DE_DLR:"$",DE_GRV:"`",DE_EURO:"€",DE_AT:"@",DE_AMPR:"&",DE_EXLM:"!",
+ DE_CIRC:"^",DE_EQL:"=",DE_QST:"?",DE_LPRN:"(",DE_RPRN:")",DE_COLN:":",DE_SCLN:";",DE_PERC:"%",
+ DE_DQOT:'"',DE_QUOT:"'",DE_UNDS:"_",DE_LESS:"<",DE_MORE:">",
+ KC_KP_SLASH:"/",
+ KC_AUDIO_MUTE:"🔇",KC_AUDIO_VOL_UP:"🔊",KC_AUDIO_VOL_DOWN:"🔉",
+ KC_BRIGHTNESS_UP:"☀+",KC_BRIGHTNESS_DOWN:"☀−",
+ KC_MEDIA_PLAY_PAUSE:"⏯",KC_MEDIA_NEXT_TRACK:"⏭",KC_MEDIA_PREV_TRACK:"⏮",
+ KC_MS_UP:"🖱↑",KC_MS_DOWN:"🖱↓",KC_MS_LEFT:"🖱←",KC_MS_RIGHT:"🖱→",
+ KC_MS_BTN1:"Klick L",KC_MS_BTN2:"Klick R",KC_MS_BTN3:"Klick M",
+ KC_MS_WH_UP:"Rad↑",KC_MS_WH_DOWN:"Rad↓",KC_MS_WH_LEFT:"Rad←",KC_MS_WH_RIGHT:"Rad→",
+ RGB_VAI:"RGB+",RGB_VAD:"RGB−",RGB_SLD:"RGB solid",MU_NEXT:"Music",AS_TOGG:"AutoShift",
+ QK_BOOT:"BOOT",MAC_SIRI:"Siri",MAC_LOCK:"Lock",KC_MAC_CUT:"✂",KC_MAC_COPY:"⧉",KC_MAC_PASTE:"📋",
+ TH_LTGT:"< >",KC_F14:"F14",
+};
+for(let i=1;i<=12;i++)BASE["KC_F"+i]="F"+i;
+for(let i=13;i<=24;i++)BASE["KC_F"+i]="F"+i;
+"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(c=>BASE["KC_"+c]=c);
+"0123456789".split("").forEach(c=>BASE["KC_"+c]=c);
+
+function label(kc){
+  kc=kc.trim();
+  if(BASE[kc]!==undefined)return {main:BASE[kc],hold:null};
+  let m;
+  if(m=kc.match(/^LT\(\s*(\d+)\s*,\s*([\s\S]+)\)$/))return {main:label(m[2]).main,hold:"L"+m[1]};
+  if(m=kc.match(/^(MO|TG|TO|TT|DF|OSL)\(\s*(\d+)\s*\)$/))return {main:m[1]+" "+m[2],hold:null,layer:true};
+  if(m=kc.match(/^([A-Z]+)\(\s*([\s\S]+)\)$/)){
+    if(MODS[m[1]]){const inner=label(m[2]);return {main:MODS[m[1]]+inner.main,hold:inner.hold};}
+  }
+  // fallback: strip KC_/DE_ prefix
+  return {main:kc.replace(/^(KC_|DE_)/,"").replace(/_/g," ").toLowerCase(),hold:null};
+}
+
+function classify(layerN,idx,kc){
+  if(kc==="KC_NO")return "b";
+  if(kc==="KC_TRANSPARENT")return "t";
+  if(layerN===1)return "remove";
+  if(layerN===0&&idx===35)return "freed";      // TG(1)
+  if(layerN===5)return "review";
+  return "keep";
+}
+
+const board=document.getElementById("board");
+let maxX=0,maxY=0;
+DATA.geo.forEach(g=>{maxX=Math.max(maxX,g.x+g.w);maxY=Math.max(maxY,g.y+g.h);});
+
+function render(layerN){
+  const L=LAYERS[layerN];
+  document.documentElement.style.setProperty("--lc",L.color);
+  document.getElementById("bt-n").textContent=layerN;
+  document.getElementById("bt-name").textContent=L.name;
+  document.getElementById("bt-sub").textContent=L.sub;
+  board.innerHTML="";
+  const avail=board.parentElement.clientWidth-48;
+  const U=Math.max(30,Math.min(54,avail/maxX));
+  board.style.width=(maxX*U)+"px";
+  board.style.height=(maxY*U+6)+"px";
+  DATA.layers[layerN].forEach((kc,idx)=>{
+    const g=DATA.geo[idx]; if(!g)return;
+    const cls=classify(layerN,idx,kc);
+    const {main,hold}=label(kc);
+    const el=document.createElement("div");
+    el.className="key "+cls;
+    el.style.left=(g.x*U+2)+"px";
+    el.style.top=(g.y*U+2)+"px";
+    el.style.width=(g.w*U-6)+"px";
+    el.style.height=(g.h*U-6)+"px";
+    el.title="Index "+idx+" · "+kc;
+    el.innerHTML=(hold?'<span class="hold">'+hold+'</span>':'')+'<span class="lab">'+main+'</span>';
+    board.appendChild(el);
+  });
+  document.querySelectorAll(".tab").forEach((t,i)=>t.classList.toggle("active",i===layerN));
+}
+
+// build tabs
+const tabs=document.getElementById("tabs");
+LAYERS.forEach(L=>{
+  const b=document.createElement("button");
+  b.className="tab";b.style.setProperty("--lc",L.color);
+  const v=L.verdict?'<span class="verdict '+L.verdict+'">'+({rm:"raus",rv:"prüfen",kp:"bleibt"})[L.verdict]+'</span>':'';
+  b.innerHTML='<i class="dot"></i><span class="ln">L'+L.n+'</span>'+L.name.split(" ")[0]+v;
+  b.onclick=()=>render(L.n);
+  tabs.appendChild(b);
+});
+
+// stats
+document.getElementById("stats").innerHTML=`
+ <div class="stat"><div class="n">6</div><div class="l">Layer aktuell</div></div>
+ <div class="stat r"><div class="n">1</div><div class="l">Layer raus (QWERTZ)</div></div>
+ <div class="stat f"><div class="n">1</div><div class="l">Taste wird frei</div></div>
+ <div class="stat v"><div class="n">1</div><div class="l">Layer zu prüfen</div></div>
+ <div class="stat k"><div class="n">3</div><div class="l">Layer bleiben</div></div>`;
+
+render(0);
+window.addEventListener("resize",()=>{const a=document.querySelector(".tab.active");render(a?[...tabs.children].indexOf(a):0);});
+</script>
+</body>
+</html>
