@@ -2,7 +2,7 @@
 # Layout "bone-r" (Oryx-Export pzg9d) fuer den ZSA Moonlander.
 #
 # Schnellstart:
-#   make setup     einmalig: QMK-Fork klonen, wally-cli + libusb bereitstellen
+#   make setup     einmalig: QMK-Fork klonen, zapp (Flasher) installieren
 #   make build     Firmware im Docker-Container kompilieren -> ./<bin>
 #   make flash     Firmware aufs Board flashen (Reset-Knopf druecken)
 #
@@ -25,8 +25,8 @@ QMK_IMAGE   := ghcr.io/qmk/qmk_cli
 # QMK leitet den Ausgabenamen aus Keyboard + Keymap ab.
 FW_BIN      := zsa_moonlander_$(REV)_$(KEYMAP).bin
 
-WALLY       := bin/wally-cli
-WALLY_URL   := https://github.com/zsa/wally-cli/releases/download/2.0.1-osx/wally-cli
+# Flasher: zapp (ZSA, Nachfolger von wally-cli, kann revA und revB)
+ZAPP        := zapp
 
 # Container-Aufruf: Fork als /qmk_firmware mounten, die Layout-Quelle direkt
 # an die Keymap-Stelle binden (kein Symlink -> funktioniert auch im Container).
@@ -45,7 +45,7 @@ DOCKER_RUN = docker run --rm --user $(shell id -u):$(shell id -g) \
 help:
 	@echo "Moonlander Build-Pipeline (Layout: $(KEYMAP), Revision: $(REV))"
 	@echo ""
-	@echo "  make setup      QMK-Fork klonen + wally-cli/libusb bereitstellen (einmalig)"
+	@echo "  make setup      QMK-Fork klonen + zapp installieren (einmalig)"
 	@echo "  make build      Firmware kompilieren  -> ./$(FW_BIN)"
 	@echo "  make build-all  reva und revb bauen"
 	@echo "  make detect     Revision des angeschlossenen Boards ermitteln"
@@ -54,11 +54,11 @@ help:
 	@echo "  make flash      Firmware flashen (Board per Reset in den Bootloader)"
 	@echo "  make flash-auto Revision automatisch erkennen, passende Firmware flashen"
 	@echo "  make clean      gebaute Artefakte entfernen"
-	@echo "  make distclean  zusaetzlich QMK-Fork und bin/ loeschen"
+	@echo "  make distclean  zusaetzlich QMK-Fork loeschen"
 	@echo ""
 	@echo "  Revision umstellen:  make build REV=revb / make flash REV=revb"
 
-setup: $(QMK_DIR) $(WALLY) libusb
+setup: $(QMK_DIR) zapp
 	@echo ">> Setup abgeschlossen."
 
 # QMK-Fork klonen (nur falls noch nicht vorhanden, ~1.5 GB inkl. Submodule).
@@ -66,19 +66,10 @@ $(QMK_DIR):
 	@echo ">> Klone ZSA QMK-Fork (dauert ein paar Minuten) ..."
 	git clone --recurse-submodules --depth 1 --shallow-submodules $(FORK_URL) $(QMK_DIR)
 
-# wally-cli herunterladen (CLI-Flasher von ZSA, macOS-Binary).
-$(WALLY):
-	@echo ">> Lade wally-cli ..."
-	@mkdir -p bin
-	curl -fL -o $(WALLY) $(WALLY_URL)
-	chmod +x $(WALLY)
-	@xattr -d com.apple.quarantine $(WALLY) 2>/dev/null || true
-
-# libusb wird von wally-cli zur Laufzeit benoetigt.
-.PHONY: libusb
-libusb:
-	@command -v brew >/dev/null 2>&1 || { echo ">> Homebrew fehlt – libusb bitte manuell installieren."; exit 0; }
-	@brew list libusb >/dev/null 2>&1 || brew install libusb
+# zapp per Homebrew installieren, falls noch nicht vorhanden.
+.PHONY: zapp
+zapp:
+	@command -v $(ZAPP) >/dev/null 2>&1 || brew install zapp
 
 build: $(QMK_DIR)
 	@echo ">> Kompiliere $(KEYBOARD):$(KEYMAP) im Container ..."
@@ -103,19 +94,19 @@ usb:
 	@scripts/detect-rev.sh --list
 
 # Revision automatisch erkennen (mit Warten), passende Firmware bauen und flashen.
-flash-auto: $(WALLY)
+flash-auto: zapp
 	@rev=$$(scripts/detect-rev.sh --wait $(WAIT)) || exit 1; \
 	$(MAKE) build REV=$$rev && $(MAKE) flash REV=$$rev
 
-flash: $(WALLY)
+flash: zapp
 	@test -f ./$(FW_BIN) || { echo ">> ./$(FW_BIN) fehlt – erst 'make build REV=$(REV)' ausfuehren."; exit 1; }
 	@echo ">> Flashe ./$(FW_BIN) ($(REV))."
 	@echo ">> Druecke jetzt den Reset-Knopf am Moonlander (kleines Loch oben links)."
-	$(WALLY) ./$(FW_BIN)
+	$(ZAPP) flash ./$(FW_BIN)
 
 clean:
 	rm -f ./zsa_moonlander_*_$(KEYMAP).bin ./zsa_moonlander_*_$(KEYMAP).bin.md5
 	rm -rf $(QMK_DIR)/.build
 
 distclean: clean
-	rm -rf $(QMK_DIR) bin
+	rm -rf $(QMK_DIR)

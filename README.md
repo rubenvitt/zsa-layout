@@ -1,14 +1,14 @@
 # ZSA Moonlander – Layout "bone-r"
 
 Build- & Flash-Pipeline für mein Oryx-Layout (`pzg9d`). Firmware wird reproduzierbar
-im Docker-Container gegen ZSA's QMK-Fork gebaut und mit `wally-cli` geflasht.
+im Docker-Container gegen ZSA's QMK-Fork gebaut und mit [`zapp`](https://github.com/zsa/zapp) geflasht.
 
 ## Schnellstart
 
 ```sh
-make setup              # einmalig: QMK-Fork klonen (~1.5 GB), wally-cli + libusb bereitstellen
+make setup              # einmalig: QMK-Fork klonen (~1.5 GB), zapp installieren
 make build              # Firmware kompilieren -> ./zsa_moonlander_reva_bone-r.bin
-make flash              # aufs Board flashen (Reset-Knopf drücken, wenn wally-cli wartet)
+make flash              # aufs Board flashen (Reset-Knopf drücken, wenn zapp wartet)
 ```
 
 `make help` zeigt alle Targets.
@@ -46,14 +46,13 @@ die USB-Geräteliste, damit sich das Board (auch im Bootloader) identifizieren l
 ## Voraussetzungen
 
 - Docker (für den QMK-Build – keine lokale Toolchain nötig)
-- macOS mit Homebrew (für `libusb`, das `wally-cli` zur Laufzeit braucht)
+- macOS mit Homebrew (für `zapp`, ZSAs Flasher – Nachfolger von `wally-cli`, kann revA und revB)
 
 ## Was wo liegt
 
 - `zsa_moonlander_bone-r_source/` – die aus Oryx exportierte Layout-Quelle (eingecheckt)
 - `Makefile` – die Pipeline
 - `qmk_firmware/` – geklonter ZSA-Fork (gitignored, via `make setup`)
-- `bin/wally-cli` – Flasher (gitignored, via `make setup`)
 
 Der Build mountet den Quell-Ordner direkt als Keymap `bone-r` in den Container, klont/kopiert
 also nichts in den Fork hinein – Layout-Änderungen in `zsa_moonlander_bone-r_source/` werden
