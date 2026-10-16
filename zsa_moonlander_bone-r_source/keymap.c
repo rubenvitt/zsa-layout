@@ -7,8 +7,7 @@
 #endif
 
 enum custom_keycodes {
-  RGB_SLD = ZSA_SAFE_RANGE,
-  MAC_SIRI,
+  MAC_SIRI = ZSA_SAFE_RANGE,
   MAC_LOCK,
 };
 
@@ -23,16 +22,16 @@ enum custom_keycodes {
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [0] = LAYOUT_moonlander(
     MO(3),          KC_1,           KC_2,           KC_3,           KC_4,           KC_5,           LGUI(LSFT(KC_4)),                                LGUI(LSFT(KC_5)),KC_6,           KC_7,           KC_8,           KC_9,           KC_0,           LT(2, KC_BSPC),
-    MO(4),          KC_J,           KC_D,           KC_U,           KC_A,           KC_X,           KC_DELETE,                                      KC_BSPC,        KC_P,           KC_H,           KC_L,           KC_M,           KC_W,           DE_SS,          
+    MO(4),          KC_J,           KC_D,           KC_U,           KC_A,           KC_X,           KC_DELETE,                                      KC_ENTER,       KC_P,           KC_H,           KC_L,           KC_M,           KC_W,           DE_SS,          
     MO(2),          KC_C,           KC_T,           KC_I,           KC_E,           KC_O,           KC_ESCAPE,                                                                      TG(1),          KC_B,           KC_N,           KC_R,           KC_S,           KC_G,           KC_Q,           
     KC_TAB,         KC_F,           KC_V,           DE_UE,          DE_AE,          DE_OE,                                          DE_Y,           DE_Z,           KC_COMMA,       KC_DOT,         KC_UP,          KC_K,           
-    KC_LEFT_SHIFT,  LGUI(KC_SPACE), KC_LEFT_CTRL,   KC_LEFT_ALT,    KC_LEFT_GUI,    KC_CAPS,                                                                                                        TG(4),          KC_BSPC,        KC_RIGHT_GUI,   KC_LEFT,        KC_DOWN,        KC_RIGHT,       
+    KC_LEFT_SHIFT,  LGUI(KC_SPACE), KC_LEFT_CTRL,   KC_LEFT_ALT,    KC_LEFT_GUI,    CW_TOGG,                                                                                                        TG(4),          KC_BSPC,        KC_RIGHT_GUI,   KC_LEFT,        KC_DOWN,        KC_RIGHT,       
     KC_ENTER,       MO(3),          MO(5),                          MAC_SIRI,       KC_RIGHT_ALT,   KC_SPACE
   ),
   [1] = LAYOUT_moonlander(
     KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,                                 KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, 
     KC_TRANSPARENT, KC_Q,           KC_W,           KC_E,           KC_R,           KC_T,           KC_F3,                                          KC_F3,          DE_Z,           KC_U,           KC_I,           KC_O,           KC_P,           DE_UE,          
-    KC_TRANSPARENT, KC_A,           KC_S,           KC_D,           KC_F,           KC_G,           KC_TRANSPARENT,                                                                 KC_TRANSPARENT, KC_H,           KC_J,           KC_K,           KC_L,           DE_OE,          KC_TRANSPARENT, 
+    KC_TRANSPARENT, KC_A,           KC_S,           KC_D,           KC_F,           KC_G,           KC_TRANSPARENT,                                                                 KC_TRANSPARENT, KC_H,           KC_J,           KC_K,           KC_L,           DE_OE,          DE_AE, 
     KC_TRANSPARENT, DE_Y,           KC_X,           KC_C,           KC_V,           KC_B,                                           KC_N,           KC_M,           KC_COMMA,       KC_DOT,         DE_MINS,        KC_TRANSPARENT, 
     KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,                                                                                                 KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, 
     KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,                 KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT
@@ -159,7 +158,7 @@ bool rgb_matrix_indicators_user(void) {
     }
   }
 
-  if (capslock_active && biton32(layer_state) == 0) {
+  if ((capslock_active || is_caps_word_on()) && biton32(layer_state) == 0) {
     RGB rgb = hsv_to_rgb_with_value((HSV) { 0, 255, 255 });
     rgb_matrix_set_color( 35, rgb.r, rgb.g, rgb.b );
   } 
@@ -169,6 +168,27 @@ bool rgb_matrix_indicators_user(void) {
 
 
 
+
+// Caps Word für deutsches Host-Layout: Umlaute gehören zum Wort, '-'/'_' und 'ß' bleiben ungeshiftet.
+bool caps_word_press_user(uint16_t keycode) {
+  switch (keycode) {
+    case KC_A ... KC_Z:
+    case DE_UE:
+    case DE_AE:
+    case DE_OE:
+      add_weak_mods(MOD_BIT(KC_LSFT));
+      return true;
+    case KC_1 ... KC_0:
+    case KC_BSPC:
+    case KC_DEL:
+    case DE_MINS:
+    case DE_UNDS:
+    case DE_SS:
+      return true;
+    default:
+      return false;
+  }
+}
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   switch (keycode) {
@@ -192,14 +212,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         }  
       }  
       return false;
-    case RGB_SLD:
-        if (rawhid_state.rgb_control) {
-            return false;
-        }
-        if (record->event.pressed) {
-            rgblight_mode(1);
-        }
-        return false;
   }
   return true;
 }
