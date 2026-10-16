@@ -38,7 +38,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   ),
   [2] = LAYOUT_moonlander(
     KC_TRANSPARENT, KC_F1,          KC_F2,          KC_F3,          KC_F4,          KC_F5,          KC_TRANSPARENT,                                 KC_TRANSPARENT, KC_F6,          KC_F7,          KC_F8,          KC_F9,          KC_F10,         KC_TRANSPARENT, 
-    LALT(KC_L),     LALT(KC_DOT),   DE_UNDS,        LALT(KC_5),     LALT(KC_6),     TH_LTGT,    KC_TRANSPARENT,                                 KC_TRANSPARENT, DE_EXLM,        DE_CIRC,        LSFT(DE_CIRC),  DE_EQL,         DE_AMPR,        DE_AT,          
+    LALT(KC_L),     LALT(KC_DOT),   DE_UNDS,        LALT(KC_5),     LALT(KC_6),     TH_LTGT,    KC_TRANSPARENT,                                 KC_TRANSPARENT, DE_EXLM,        DE_CIRC,        LSFT(DE_CIRC),  DE_EQL,         DE_AMPR,        LALT(KC_L),     
     KC_TRANSPARENT, LALT(LSFT(KC_7)),DE_SLSH,        LALT(KC_8),     LALT(KC_9),     DE_ASTR,        KC_TRANSPARENT,                                                                 KC_TRANSPARENT, DE_QST,         DE_LPRN,        DE_RPRN,        DE_MINS,        DE_COLN,        KC_TRANSPARENT, 
     KC_TRANSPARENT, DE_HASH,        DE_DLR,         LALT(KC_7),     LALT(KC_N),     DE_GRV,                                         DE_PLUS,        DE_PERC,        DE_DQOT,        DE_QUOT,        DE_SCLN,        DE_EURO,        
     KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,                                                                                                 KC_TRANSPARENT, KC_TRANSPARENT, KC_F12,         KC_F13,         KC_F14,         KC_F15,         
@@ -48,7 +48,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KC_TRANSPARENT, LGUI(LSFT(KC_SPACE)),KC_NO,          KC_NO,          KC_NO,          KC_NO,          KC_TRANSPARENT,                                 KC_TRANSPARENT, KC_NO,          KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_NO,          KC_TRANSPARENT, 
     MAC_LOCK,       KC_PAGE_UP,     KC_BSPC,        KC_UP,          KC_DELETE,      KC_PGDN,        KC_TRANSPARENT,                                 KC_TRANSPARENT, KC_NO,          KC_7,           KC_8,           KC_9,           DE_PLUS,        DE_MINS,        
     KC_TRANSPARENT, KC_HOME,        KC_LEFT,        KC_DOWN,        KC_RIGHT,       KC_END,         KC_TRANSPARENT,                                                                 KC_TRANSPARENT, KC_NO,          KC_4,           KC_5,           KC_6,           DE_ASTR,        DE_SLSH,        
-    KC_TRANSPARENT, LGUI(LSFT(DE_Z)),KC_MAC_CUT,     KC_MAC_COPY,    KC_MAC_PASTE,   LCTL(DE_Z),                                     KC_0,           KC_1,           KC_2,           KC_3,           KC_NO,          KC_TRANSPARENT, 
+    KC_TRANSPARENT, LGUI(LSFT(DE_Z)),KC_MAC_CUT,     KC_MAC_COPY,    KC_MAC_PASTE,   LGUI(DE_Z),                                     KC_0,           KC_1,           KC_2,           KC_3,           KC_NO,          KC_TRANSPARENT, 
     KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,                                                                                                 KC_TRANSPARENT, KC_TRANSPARENT, KC_0,           KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, 
     KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,                 KC_TRANSPARENT, KC_ESCAPE,      KC_TRANSPARENT
   ),
