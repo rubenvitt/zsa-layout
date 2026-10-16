@@ -3,7 +3,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { parseKeymap, describeKey, LAYER_NAMES } from './keymap.js';
 
-const SOURCE_URL = '../zsa_moonlander_bone-r_source/keymap.c';
+// Lokal ein Symlink auf die Keymap-Quelle, im gebauten Site-Ordner eine Kopie (make site).
+const SOURCE_URL = 'keymap.c';
+// Live-Reload nur lokal; die gehostete Seite ist ein fester Stand.
+const LIVE = ['localhost', '127.0.0.1'].includes(location.hostname);
 const POLL_MS = 2000;
 
 const THUMB_ANGLE = THREE.MathUtils.degToRad(27); // thumb clusters fan out down/inward like the real board
@@ -360,7 +363,7 @@ async function load() {
     paintCaps();
     renderPanel();
     $('banner').hidden = true;
-    $('status').textContent = `Aus keymap.c geladen: ${new Date().toLocaleTimeString('de-DE')} · prüft alle 2 s`;
+    $('status').textContent = `Aus keymap.c geladen: ${new Date().toLocaleTimeString('de-DE')}${LIVE ? ' · prüft alle 2 s' : ''}`;
   } catch (err) {
     showError(`keymap.c konnte nicht geladen werden: ${err.message}` + (keymap ? '\nAngezeigt wird der letzte gültige Stand.' : ''));
   }
@@ -401,4 +404,4 @@ addEventListener('keydown', (ev) => {
 
 renderLegend();
 await load();
-setInterval(load, POLL_MS);
+if (LIVE) setInterval(load, POLL_MS);

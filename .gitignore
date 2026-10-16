@@ -5,3 +5,4 @@ build.log
 
 # Build pipeline (lokal, nicht eingecheckt)
 qmk_firmware/
+dist/

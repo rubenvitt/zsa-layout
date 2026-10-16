@@ -17,6 +17,9 @@ make flash              # aufs Board flashen (Reset-Knopf drücken, wenn zapp wa
 `keymap.c` live ein und aktualisiert sich alle 2 s – Tasten anklicken zeigt ihre Funktion
 auf allen Layern.
 
+`make site` baut dieselbe Ansicht als statische Seite nach `dist/` (ohne Live-Reload).
+Cloudflare Pages: Build-Befehl `make site`, Ausgabeverzeichnis `dist`.
+
 ## Hardware-Revision
 
 Der Moonlander gibt es als **revA** (Mark I, ausgeliefert bis ~Mitte Dez 2025) und

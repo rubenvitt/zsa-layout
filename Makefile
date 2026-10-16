@@ -40,7 +40,7 @@ DOCKER_RUN = docker run --rm --user $(shell id -u):$(shell id -g) \
 .DEFAULT_GOAL := help
 
 # ---- Targets -------------------------------------------------------------
-.PHONY: help setup build build-all detect detect-wait usb flash flash-auto viewer clean distclean
+.PHONY: help setup build build-all detect detect-wait usb flash flash-auto viewer site clean distclean
 
 help:
 	@echo "Moonlander Build-Pipeline (Layout: $(KEYMAP), Revision: $(REV))"
@@ -54,6 +54,7 @@ help:
 	@echo "  make flash      Firmware flashen (Board per Reset in den Bootloader)"
 	@echo "  make flash-auto Revision automatisch erkennen, passende Firmware flashen"
 	@echo "  make viewer     3D-Ansicht des Layouts im Browser (liest keymap.c live)"
+	@echo "  make site       3D-Ansicht als statische Seite nach $(SITE_DIR)/ bauen (Hosting)"
 	@echo "  make clean      gebaute Artefakte entfernen"
 	@echo "  make distclean  zusaetzlich QMK-Fork loeschen"
 	@echo ""
@@ -112,9 +113,16 @@ viewer:
 	@(sleep 1 && open http://localhost:$(VIEWER_PORT)/viewer/) &
 	python3 -m http.server $(VIEWER_PORT) --bind 127.0.0.1
 
+# Statische Seite fürs Hosting (z.B. Cloudflare Pages: Build-Befehl 'make site', Ausgabe 'dist').
+SITE_DIR := dist
+site:
+	rm -rf $(SITE_DIR) && mkdir -p $(SITE_DIR)
+	cp -L viewer/index.html viewer/main.js viewer/keymap.js viewer/layout.json viewer/keymap.c $(SITE_DIR)/
+	@echo ">> Statische Seite: ./$(SITE_DIR)/"
+
 clean:
 	rm -f ./zsa_moonlander_*_$(KEYMAP).bin ./zsa_moonlander_*_$(KEYMAP).bin.md5
-	rm -rf $(QMK_DIR)/.build
+	rm -rf $(QMK_DIR)/.build $(SITE_DIR)
 
 distclean: clean
 	rm -rf $(QMK_DIR)
