@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { parseKeymap, describeKey, LAYER_NAMES } from './keymap.js';
 
 // Lokal ein Symlink auf die Keymap-Quelle, im gebauten Site-Ordner eine Kopie (make site).
@@ -12,28 +13,37 @@ const POLL_MS = 2000;
 const THUMB_ANGLE = THREE.MathUtils.degToRad(27); // thumb clusters fan out down/inward like the real board
 const HALF_GAP = 1.6;                              // extra space between the halves (key units)
 const HALF_SPLAY = THREE.MathUtils.degToRad(9);   // halves rotated outward (top view)
-const HALF_TENT = THREE.MathUtils.degToRad(6);    // inner edges raised
-const CASE_HEIGHT = 0.55;
-const CAP_HEIGHT = 0.38;
+const CASE_HEIGHT = 0.8;
+const PALM_HEIGHT = 0.62;
+const CAP_LIFT = 0.2;    // gap between plate and cap where the underglow shows
+const CAP_HEIGHT = 0.42;
+const CAP_TAPER = 0.84;  // top face size relative to the cap's footprint
 const CAP_GAP = 0.1;
 
+const CASE_COLOR = '#e8e8e6';
+const CAP_COLOR = '#f4f3ef';
+const RED_COLOR = '#c9776a';
+const NONE_CAP_COLOR = '#8e9198';
+const LEGEND_COLOR = '#7486a6';
+const RED_LEGEND_COLOR = '#fbeee9';
+
+// Category = color of the per-key underglow (and the small dot on the cap).
 const CATEGORIES = {
-  letter:     { color: '#e4e0d6', name: 'Buchstaben' },
-  number:     { color: '#c3ccd6', name: 'Ziffern' },
-  symbol:     { color: '#86a6e6', name: 'Sonderzeichen' },
-  modifier:   { color: '#e0a458', name: 'Modifier' },
-  layer:      { color: '#a487e0', name: 'Layer' },
-  nav:        { color: '#6cc48a', name: 'Navigation' },
-  edit:       { color: '#e57f6e', name: 'Bearbeiten' },
-  function:   { color: '#69788a', name: 'F-Tasten' },
-  media:      { color: '#d873ad', name: 'Medien' },
-  mouse:      { color: '#cdbb5e', name: 'Maus' },
-  system:     { color: '#c24b4b', name: 'System' },
-  shortcut:   { color: '#3fb1bd', name: 'Shortcuts' },
+  letter:     { color: '#7aaeff', name: 'Buchstaben' },
+  number:     { color: '#9de7ff', name: 'Ziffern' },
+  symbol:     { color: '#3d63ff', name: 'Sonderzeichen' },
+  modifier:   { color: '#ffae42', name: 'Modifier' },
+  layer:      { color: '#b38aff', name: 'Layer' },
+  nav:        { color: '#64e04a', name: 'Navigation' },
+  edit:       { color: '#ff765f', name: 'Bearbeiten' },
+  function:   { color: '#8798ae', name: 'F-Tasten' },
+  media:      { color: '#ff69c4', name: 'Medien' },
+  mouse:      { color: '#ffdf5a', name: 'Maus' },
+  system:     { color: '#ff3d3d', name: 'System' },
+  shortcut:   { color: '#1fd6a8', name: 'Shortcuts' },
   none:       { color: '#2a2d34', name: 'unbelegt' },
 };
-const BG = '#14161b';
-const ACCENT = new THREE.Color('#7aa7ff');
+const BG = '#070a13';
 
 const $ = (id) => document.getElementById(id);
 const layout = await (await fetch('layout.json')).json();
@@ -76,34 +86,76 @@ $('scene').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(BG);
-scene.fog = new THREE.Fog(BG, 30, 60);
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.35;
 
-const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 200);
-camera.position.set(0, 15, 14);
+const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 200);
+camera.position.set(0, 14, 20);
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0, 0, 0.6);
+controls.target.set(0, 0, 0.3);
 controls.enableDamping = true;
-controls.minDistance = 7;
-controls.maxDistance = 40;
-controls.maxPolarAngle = THREE.MathUtils.degToRad(82);
+controls.minDistance = 8;
+controls.maxDistance = 45;
+controls.maxPolarAngle = THREE.MathUtils.degToRad(80);
 controls.update();
 
-scene.add(new THREE.HemisphereLight('#c8d4ff', '#1a1612', 1.1));
-const sun = new THREE.DirectionalLight('#fff4e6', 2.2);
-sun.position.set(-6, 14, 9);
-sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
-sun.shadow.radius = 6;
-Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 10, bottom: -10, near: 1, far: 40 });
-sun.shadow.bias = -0.0005;
-scene.add(sun);
+scene.add(new THREE.HemisphereLight('#dfe8ff', '#0b1020', 0.7));
+const keyLight = new THREE.DirectionalLight('#fff6ec', 1.9);
+keyLight.position.set(-8, 18, 12);
+keyLight.castShadow = true;
+keyLight.shadow.mapSize.set(2048, 2048);
+keyLight.shadow.radius = 8;
+Object.assign(keyLight.shadow.camera, { left: -16, right: 16, top: 12, bottom: -12, near: 1, far: 50 });
+keyLight.shadow.bias = -0.0005;
+scene.add(keyLight);
+const rimLight = new THREE.DirectionalLight('#8fb2ff', 1.6);
+rimLight.position.set(6, 7, -14);
+scene.add(rimLight);
 
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 200),
-  new THREE.MeshStandardMaterial({ color: '#1b1e24', roughness: 0.95 }));
-ground.rotation.x = -Math.PI / 2;
-ground.position.y = -0.3;
-ground.receiveShadow = true;
-scene.add(ground);
+function canvasTexture(size, draw) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  draw(canvas.getContext('2d'), size);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function roundedRect(x0, y0, x1, y1, r) {
+  const s = new THREE.Shape();
+  s.moveTo(x0 + r, y0);
+  s.lineTo(x1 - r, y0); s.quadraticCurveTo(x1, y0, x1, y0 + r);
+  s.lineTo(x1, y1 - r); s.quadraticCurveTo(x1, y1, x1 - r, y1);
+  s.lineTo(x0 + r, y1); s.quadraticCurveTo(x0, y1, x0, y1 - r);
+  s.lineTo(x0, y0 + r); s.quadraticCurveTo(x0, y0, x0 + r, y0);
+  return s;
+}
+
+// Extrude a 2D outline (x, z) into a slab standing on y = base with rounded edges.
+function slab(shape, height, material, base = 0, bevel = 0.18) {
+  const geo = new THREE.ExtrudeGeometry(shape, {
+    depth: height - 2 * bevel, bevelSize: bevel, bevelThickness: bevel, bevelSegments: 5, curveSegments: 24 });
+  geo.rotateX(Math.PI / 2);
+  geo.translate(0, base + height - bevel, 0);
+  const mesh = new THREE.Mesh(geo, material);
+  mesh.castShadow = mesh.receiveShadow = true;
+  return mesh;
+}
+
+// Desk mat with a soft vignette.
+const MAT_W = 27, MAT_D = 15.5;
+const matTexture = canvasTexture(512, (g, n) => {
+  const grad = g.createRadialGradient(n / 2, n / 2, n * 0.05, n / 2, n / 2, n * 0.72);
+  grad.addColorStop(0, '#3a5283');
+  grad.addColorStop(0.55, '#2a3a5c');
+  grad.addColorStop(1, '#151d31');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, n, n);
+});
+matTexture.repeat.set(1 / MAT_W, 1 / MAT_D); // extrude UVs are shape coordinates
+matTexture.offset.set(0.5, 0.5);
+scene.add(slab(roundedRect(-MAT_W / 2, -MAT_D / 2, MAT_W / 2, MAT_D / 2, 1.2), 0.1,
+  new THREE.MeshStandardMaterial({ map: matTexture, roughness: 0.95 }), -0.1, 0.04));
 
 // Convex hull (monotone chain) for the case outline.
 function hull(points) {
@@ -121,48 +173,78 @@ function hull(points) {
   return [...half(p), ...half(p.reverse())];
 }
 
+// Rounded box whose top is narrower than its base, like a sculpted keycap.
+function capGeometry(w, h) {
+  const geo = new RoundedBoxGeometry(w, CAP_HEIGHT, h, 3, 0.1);
+  const pos = geo.attributes.position;
+  for (let v = 0; v < pos.count; v++) {
+    const s = 1 - (1 - CAP_TAPER) * (pos.getY(v) / CAP_HEIGHT + 0.5);
+    pos.setXYZ(v, pos.getX(v) * s, pos.getY(v), pos.getZ(v) * s);
+  }
+  return geo;
+}
+
+const glowTexture = canvasTexture(128, (g, n) => {
+  const grad = g.createRadialGradient(n / 2, n / 2, 0, n / 2, n / 2, n / 2);
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.62, 'rgba(255,255,255,0.95)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, n, n);
+});
+
+const caseMaterial = new THREE.MeshStandardMaterial({ color: CASE_COLOR, roughness: 0.7 });
+const ORIGIN_Y = 4.6; // vertical center of keys + palm rests (key units)
 const caps = [];
 for (const left of [true, false]) {
-  const originX = left ? 8 : 9, originY = 3.5;
+  const originX = left ? 8 : 9;
+  // Shapes are defined for the left half; the right half mirrors them (x -> 17 - x).
+  const local = (x, y) => [(left ? x : 17 - x) - originX, y - ORIGIN_Y];
   const group = new THREE.Group();
   group.position.set((left ? -1 : 1) * (0.5 + HALF_GAP / 2), 0, 0);
-  group.rotation.set(0, left ? -HALF_SPLAY : HALF_SPLAY, left ? HALF_TENT : -HALF_TENT);
+  group.rotation.y = left ? -HALF_SPLAY : HALF_SPLAY;
   scene.add(group);
 
-  const corners = [];
+  const bodyCorners = [], thumbCorners = [];
   placements.forEach((p, i) => {
     if (p.left !== left) return;
-    const lx = p.cx - originX, lz = p.cy - originY;
-    const c = Math.cos(p.angle), s = Math.sin(p.angle), pad = 0.35;
+    const lx = p.cx - originX, lz = p.cy - ORIGIN_Y;
+    const c = Math.cos(p.angle), s = Math.sin(p.angle), pad = isThumb(layout[i]) ? 0.28 : 0.38;
     for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
       const dx = sx * (p.w / 2 + pad), dy = sy * (p.h / 2 + pad);
-      corners.push([lx + dx * c - dy * s, lz + dx * s + dy * c]);
+      (isThumb(layout[i]) ? thumbCorners : bodyCorners).push([lx + dx * c - dy * s, lz + dx * s + dy * c]);
     }
 
-    const cap = new THREE.Mesh(
-      new RoundedBoxGeometry(p.w, CAP_HEIGHT, p.h, 3, 0.09),
-      new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.05 }));
-    cap.position.set(lx, CASE_HEIGHT + CAP_HEIGHT / 2, lz);
+    const red = isRed(layout[i]);
+    const cap = new THREE.Mesh(capGeometry(p.w, p.h),
+      new THREE.MeshStandardMaterial({ color: red ? RED_COLOR : CAP_COLOR, roughness: 0.48 }));
+    cap.position.set(lx, 0, lz);
     cap.rotation.y = -p.angle;
     cap.castShadow = cap.receiveShadow = true;
-    cap.userData.index = i;
-    const top = new THREE.Mesh(new THREE.PlaneGeometry(p.w - 0.12, p.h - 0.12),
+    cap.userData = { index: i, red };
+    const top = new THREE.Mesh(new THREE.PlaneGeometry(p.w * CAP_TAPER - 0.1, p.h * CAP_TAPER - 0.1),
       new THREE.MeshBasicMaterial({ transparent: true }));
     top.rotation.x = -Math.PI / 2;
     top.position.y = CAP_HEIGHT / 2 + 0.002;
     top.userData.index = i;
     cap.add(top);
-    group.add(cap);
+
+    // Underglow on the plate, not a child of the cap so it neither lifts nor gets picked.
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(p.w + 0.8, p.h + 0.8),
+      new THREE.MeshBasicMaterial({ map: glowTexture, transparent: true, depthWrite: false, toneMapped: false }));
+    glow.rotation.set(-Math.PI / 2, 0, -p.angle);
+    glow.position.set(lx, CASE_HEIGHT + 0.004, lz);
+    cap.userData.glow = glow;
+    group.add(cap, glow);
     caps[i] = cap;
   });
 
-  const shape = new THREE.Shape(hull(corners).map(([x, y]) => new THREE.Vector2(x, y)));
-  const geo = new THREE.ExtrudeGeometry(shape, { depth: CASE_HEIGHT - 0.1, bevelSize: 0.12, bevelThickness: 0.1, bevelSegments: 3 });
-  geo.rotateX(Math.PI / 2);
-  geo.translate(0, CASE_HEIGHT - 0.1, 0);
-  const slab = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: '#2a2e36', roughness: 0.7, metalness: 0.15 }));
-  slab.castShadow = slab.receiveShadow = true;
-  group.add(slab);
+  const toShape = (pts) => new THREE.Shape(hull(pts).map(([x, y]) => new THREE.Vector2(x, y)));
+  group.add(slab(toShape(bodyCorners), CASE_HEIGHT, caseMaterial));
+  group.add(slab(toShape(thumbCorners), CASE_HEIGHT, caseMaterial));
+  // Palm rest: wide rounded paddle below the rows, outside the thumb module.
+  const [px0, py0] = local(-0.35, 4.9), [px1, py1] = local(5.0, 9.4);
+  group.add(slab(roundedRect(Math.min(px0, px1), py0, Math.max(px0, px1), py1, 1.5), PALM_HEIGHT, caseMaterial));
 }
 
 function resize() {
@@ -184,11 +266,6 @@ renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, came
 
 const PX = 192; // canvas pixels per key unit
 
-function textColorFor(color) {
-  const c = color.clone().convertLinearToSRGB();
-  return 0.299 * c.r + 0.587 * c.g + 0.114 * c.b > 0.6 ? '#1b1d22' : '#eef0f3';
-}
-
 // Largest font (one line, else two lines split at a space/+) that fits the cap width.
 function fitLabel(g, label, maxW) {
   const breaks = [...label.matchAll(/[ +]/g)].map((m) => m.index);
@@ -203,13 +280,17 @@ function fitLabel(g, label, maxW) {
   return { size: PX * 0.16, lines: [label] };
 }
 
-function legendTexture(desc, w, h, ghost, color) {
+function legendTexture(desc, w, h, ghost, color, dotColor) {
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(w * PX);
   canvas.height = Math.round(h * PX);
   const g = canvas.getContext('2d');
+  g.globalAlpha = ghost ? 0.35 : 1;
+  g.fillStyle = dotColor;
+  g.beginPath();
+  g.arc(PX * 0.13, PX * 0.13, PX * 0.06, 0, 2 * Math.PI);
+  g.fill();
   g.fillStyle = color;
-  g.globalAlpha = ghost ? 0.45 : 1;
   g.textAlign = 'center';
   g.textBaseline = 'middle';
   const { size, lines } = fitLabel(g, desc.label || '', canvas.width * 0.86);
@@ -252,14 +333,17 @@ function paintCaps() {
   caps.forEach((cap, i) => {
     const { desc, from } = resolve(layerIndex, i);
     const ghost = from !== layerIndex;
-    const base = (CATEGORIES[desc.category] ?? CATEGORIES.none).color;
-    const color = new THREE.Color(base);
-    if (ghost) color.lerp(new THREE.Color(BG), 0.72);
-    cap.material.color.copy(color);
+    const none = desc.category === 'none';
+    const glowColor = (CATEGORIES[desc.category] ?? CATEGORIES.letter).color;
+    cap.material.color.set(none ? NONE_CAP_COLOR : cap.userData.red ? RED_COLOR : CAP_COLOR);
+    // Faint category tint (light bleeding through), so the info survives where caps hide the glow from view.
+    if (!ghost && !none && !cap.userData.red) cap.material.color.lerp(new THREE.Color(glowColor), 0.24);
+    cap.userData.glow.material.color.set(glowColor);
+    cap.userData.glow.visible = !ghost && !none;
     const top = cap.children[0];
     top.material.map?.dispose();
-    top.material.map = desc.category === 'none' ? null : legendTexture(desc, top.geometry.parameters.width,
-      top.geometry.parameters.height, ghost, textColorFor(color));
+    top.material.map = none ? null : legendTexture(desc, top.geometry.parameters.width, top.geometry.parameters.height,
+      ghost, cap.userData.red ? RED_LEGEND_COLOR : LEGEND_COLOR, glowColor);
     top.visible = !!top.material.map;
     top.material.needsUpdate = true;
   });
@@ -269,9 +353,12 @@ function paintCaps() {
 // Only selection/hover styling, without re-rendering legends.
 function paintHighlight() {
   caps.forEach((cap, i) => {
-    cap.material.emissive.copy(i === selected ? ACCENT : new THREE.Color(0xffffff));
-    cap.material.emissiveIntensity = i === selected ? 0.35 : i === hovered ? 0.08 : 0;
-    cap.position.y = CASE_HEIGHT + CAP_HEIGHT / 2 - (i === selected ? 0.1 : 0);
+    const glow = cap.userData.glow;
+    cap.material.emissive.copy(glow.material.color);
+    cap.material.emissiveIntensity = i === selected ? 0.45 : 0;
+    cap.position.y = CASE_HEIGHT + CAP_LIFT + CAP_HEIGHT / 2 + (i === selected ? 0.14 : i === hovered ? 0.06 : 0);
+    glow.scale.setScalar(i === selected ? 1.6 : 1);
+    glow.material.opacity = i === selected ? 1 : 0.9;
   });
 }
 
@@ -292,8 +379,8 @@ function renderLegend() {
     s.style.setProperty('--c', color);
     s.textContent = name;
     return s;
-  }), Object.assign(document.createElement('span'), { className: 'ghost', textContent: 'durchlässig (gedimmt)' }));
-  $('legend').lastChild.style.setProperty('--c', CATEGORIES.letter.color);
+  }), Object.assign(document.createElement('span'), { className: 'ghost', textContent: 'durchlässig (ohne Glow)' }));
+  $('legend').lastChild.style.setProperty('--c', CASE_COLOR);
 }
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
