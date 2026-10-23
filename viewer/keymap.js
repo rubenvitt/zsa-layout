@@ -146,7 +146,7 @@ const KEYS = {
   RGB_VAI: ['LED+', 'system', 'LED heller', 'Helligkeit der Tastatur-Beleuchtung erhöhen'],
   RGB_VAD: ['LED−', 'system', 'LED dunkler', 'Helligkeit der Tastatur-Beleuchtung verringern'],
   RGB_SLD: ['LED', 'system', 'LED-Modus statisch', 'Setzt die Beleuchtung auf statischen Modus'],
-  MAC_SIRI: ['Siri', 'system', 'Siri / Diktat', 'Sendet Consumer-Code 0xCF (Sprachbefehl): startet Siri bzw. Diktat'],
+  OS_HYPR: ['Hyper', 'system', 'One-Shot Hyper', 'Tippen: nächste Taste mit Cmd+Ctrl+Option+Shift (AeroSpace) · Halten: Hyper solange gedrückt'],
   MAC_LOCK: ['Sperre', 'system', 'Bildschirm sperren', 'Sendet Consumer-Code 0x19E: sperrt den Mac'],
 };
 

@@ -7,10 +7,14 @@
 #endif
 
 enum custom_keycodes {
-  MAC_SIRI = ZSA_SAFE_RANGE,
-  MAC_LOCK,
+  MAC_LOCK = ZSA_SAFE_RANGE,
 };
 
+// One-Shot-Hyper (Cmd+Ctrl+Opt+Shift) fuer AeroSpace: Tippen wirkt auf die
+// naechste Taste, Halten wie ein normaler Modifier. Bewusst die rechten
+// Modifier: Auto Shift loescht beim naechsten Tastendruck das linke Shift aus
+// den One-Shot-Mods, aus MOD_HYPR wuerde so Cmd+Ctrl+Opt.
+#define OS_HYPR OSM(MOD_RCTL | MOD_RSFT | MOD_RALT | MOD_RGUI)
 
 
 // Tap/Hold-Taste fuer Winkelklammern: Tap = '<', Hold = '>'.
@@ -26,7 +30,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     MO(2),          KC_C,           KC_T,           KC_I,           KC_E,           KC_O,           KC_ESCAPE,                                                                      TG(1),          KC_B,           KC_N,           KC_R,           KC_S,           KC_G,           KC_Q,           
     KC_TAB,         KC_F,           KC_V,           DE_UE,          DE_AE,          DE_OE,                                          DE_Y,           DE_Z,           KC_COMMA,       KC_DOT,         KC_UP,          KC_K,           
     KC_LEFT_SHIFT,  LGUI(KC_SPACE), KC_LEFT_CTRL,   KC_LEFT_ALT,    KC_LEFT_GUI,    CW_TOGG,                                                                                                        TG(4),          KC_BSPC,        KC_RIGHT_GUI,   KC_LEFT,        KC_DOWN,        KC_RIGHT,       
-    KC_ENTER,       MO(3),          MO(5),                          MAC_SIRI,       KC_RIGHT_ALT,   KC_SPACE
+    KC_ENTER,       MO(3),          MO(5),                          OS_HYPR,        KC_RIGHT_ALT,   KC_SPACE
   ),
   [1] = LAYOUT_moonlander(
     KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,                                 KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, 
@@ -192,8 +196,6 @@ bool caps_word_press_user(uint16_t keycode) {
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   switch (keycode) {
-    case MAC_SIRI:
-      HCS(0xCF);
     case MAC_LOCK:
       HCS(0x19E);
 
